@@ -28,3 +28,7 @@ Thumbs.db
 
 # Lambda packaging
 .aws-sam/
+.threatmodel/
+docs/pcsr-artifacts/
+ProbeScanExport-*
+dsr-2025-11-19.xlsx

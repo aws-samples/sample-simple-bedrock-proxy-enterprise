@@ -1,5 +1,7 @@
 # Simple Amazon Bedrock Proxy for Enterprise Integration
 
+> **Disclaimer:** AWS code samples are example code that demonstrates practical implementations of AWS services for specific use cases and scenarios. These application solutions are not supported products in their own right, but educational examples to help our customers use our products for their applications. As our customer, any applications you integrate these examples into should be thoroughly tested, secured, and optimized according to your business's security standards & policies before deploying to production or handling production workloads.
+
 Demonstrates that developers can use **LangChain** seamlessly through a Bedrock proxy by leveraging [boto3's event system](https://docs.aws.amazon.com/boto3/latest/guide/events.html) to inject custom headers into a pre-configured client. This pattern enables enterprise platforms to centrally govern, authenticate, and track AI model usage while letting developers use familiar tools like LangChain without modification.
 
 ![Architecture](docs/generated-diagrams/architecture.png)
