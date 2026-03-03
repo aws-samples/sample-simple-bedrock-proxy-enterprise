@@ -139,6 +139,17 @@ for chunk in chat.stream("Hello!"):
     print(chunk.content)
 ```
 
+## Production Considerations
+
+This sample is intentionally simplified for demonstration purposes. In an enterprise deployment, consider the following:
+
+- **Private API Gateway** — The API Gateway is deployed as `REGIONAL` (public) so that demo clients can be run directly from a developer laptop. In production, a `PRIVATE` endpoint type restricts access to traffic originating from within a VPC, which requires clients to run inside the VPC (e.g., ECS tasks, EC2 instances, or via VPN/Direct Connect).
+- **Secrets management** — The Cognito client secret is retrieved and stored in a local environment variable for convenience. In production, store secrets in AWS Secrets Manager and retrieve them at runtime.
+- **Throttling and rate limiting** — Configure API Gateway usage plans, throttling limits, and per-client rate limiting in the CDK stack to prevent abuse and control costs.
+- **Bedrock Guardrails** — Apply [Amazon Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html) to enforce content filtering, topic restrictions, and sensitive information redaction.
+- **TLS enforcement** — API Gateway uses HTTPS by default, but to enforce TLS 1.2+ and use a custom domain, configure a custom domain name with an ACM certificate in the CDK stack.
+- **WAF** — For customer-facing applications, attach AWS WAF rules to the API Gateway to protect against common web exploits (SQL injection, XSS, bot traffic, IP-based throttling).
+
 ## Cleanup
 
 ```bash
