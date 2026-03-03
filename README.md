@@ -2,19 +2,31 @@
 
 > **Disclaimer:** AWS code samples are example code that demonstrates practical implementations of AWS services for specific use cases and scenarios. These application solutions are not supported products in their own right, but educational examples to help our customers use our products for their applications. As our customer, any applications you integrate these examples into should be thoroughly tested, secured, and optimized according to your business's security standards & policies before deploying to production or handling production workloads.
 
-Demonstrates that developers can use **LangChain** seamlessly through a Bedrock proxy by leveraging [boto3's event system](https://docs.aws.amazon.com/boto3/latest/guide/events.html) to inject custom headers into a pre-configured client. This pattern enables enterprise platforms to centrally govern, authenticate, and track AI model usage while letting developers use familiar tools like LangChain without modification.
+Demonstrates that developers can use popular AI frameworks seamlessly through a Bedrock proxy by leveraging [boto3's event system](https://docs.aws.amazon.com/boto3/latest/guide/events.html) to inject custom headers into a pre-configured client. This pattern enables enterprise platforms to centrally govern, authenticate, and track AI model usage while letting developers use their preferred tools without modification.
 
 ![Architecture](docs/generated-diagrams/architecture.png)
+
+## Supported Frameworks
+
+The proxy works transparently with any framework that uses boto3 to call Bedrock. Each demo shows a different integration method:
+
+| Demo | Framework | Integration Method |
+|---|---|---|
+| `demo_boto3.py` | **boto3** (direct) | All 4 Bedrock APIs: Converse, ConverseStream, InvokeModel, InvokeModelWithResponseStream |
+| `demo_langchain.py` | **LangChain** | `ChatBedrockConverse(client=...)` — pass pre-configured boto3 client |
+| `demo_langgraph.py` | **LangGraph** | ReAct agent with tools via `ChatBedrockConverse(client=...)` |
+| `demo_strands.py` | **Strands Agents** | `BedrockModel(boto_session=...)` — pass session with event handlers + `AWS_ENDPOINT_URL_BEDROCK_RUNTIME` env var |
+| `demo_crewai.py` | **CrewAI** | `boto3.Session.client` monkey-patch — universal fallback for frameworks with no client parameter |
 
 ## How It Works
 
 1. **Client authenticates** with Cognito (client_credentials grant) and gets an access token
-2. **Client creates a boto3 `bedrock-runtime` client** with `endpoint_url` pointing to the API Gateway proxy
-3. **Client registers a `before-call` event handler** that injects:
+2. **Client configures boto3** to route through the proxy (via `endpoint_url` or env var)
+3. **Client injects custom headers** via boto3's `before-call` event:
    - `x-auth-token` — Cognito JWT for authorization
    - `X-Client-Workload-Id` — identifies the calling application
    - `X-Request-Tracker` — unique request correlation ID
-4. **Client passes the boto3 client to LangChain's `ChatBedrockConverse`** — LangChain works with zero modifications
+4. **AI framework calls Bedrock as usual** — the proxy is invisible to the framework
 5. **API Gateway** validates the JWT via a Custom Lambda Authorizer
 6. **Proxy Lambda** (FastAPI + Lambda Web Adapter) extracts tracking headers + model ID, logs them, then forwards raw bytes to Bedrock using SigV4-signed requests
 7. **Response streaming** — Bedrock's binary event stream flows back through API Gateway (REST, `responseTransferMode: STREAM`) to the client's boto3, which parses it natively
@@ -25,11 +37,11 @@ The proxy Lambda logs a structured JSON entry for every request:
 
 ```json
 {
-  "client_id": "56hj9q63rnn...",
   "workload_id": "demo-langchain-workload",
   "request_tracker": "a1b2c3d4-...",
   "model_id": "global.anthropic.claude-sonnet-4-6",
   "operation": "converse-stream",
+  "auth_token_present": true,
   "timestamp": "2026-03-02T14:30:00Z"
 }
 ```
@@ -50,59 +62,47 @@ pip install -r requirements.txt
 cdk deploy
 ```
 
-## Run the Demo
+## Run the Demos
 
 ```bash
 # Set environment variables from stack outputs
 source scripts/setup-env.sh
 
-# Install client dependencies and run
+# Install client dependencies
 cd src/client
 pip install -r requirements.txt
-python demo.py
-```
 
-Expected output:
-
-```
-1. Authenticating with Cognito...
-   Got access token.
-
-2. Creating boto3 client with custom endpoint + headers...
-   endpoint_url = https://xxx.execute-api.us-west-2.amazonaws.com/prod/
-   workload_id  = demo-langchain-workload
-
-3. Initializing LangChain ChatBedrockConverse...
-   model = global.anthropic.claude-sonnet-4-6
-
-4. Streaming response through proxy:
-
---------------------------------------------------
-The capital of France is Paris.
---------------------------------------------------
-
-Done. Check Lambda CloudWatch logs for tracking entries.
+# Run any demo
+python demo_boto3.py       # Raw boto3 — all 4 Bedrock APIs
+python demo_langchain.py   # LangChain ChatBedrockConverse
+python demo_langgraph.py   # LangGraph ReAct agent with tools
+python demo_strands.py     # Strands Agents
+python demo_crewai.py      # CrewAI crew
 ```
 
 ## Project Structure
 
 ```
-├── infra/                        # CDK infrastructure (Python)
-│   ├── app.py                    # CDK app entry point
-│   └── stacks/proxy_stack.py     # Cognito + API GW + Lambdas
+├── infra/                           # CDK infrastructure (Python)
+│   ├── app.py                       # CDK app entry point
+│   └── stacks/proxy_stack.py        # Cognito + API GW + Lambdas
 ├── src/
-│   ├── proxy/                    # Proxy Lambda (FastAPI + LWA)
-│   │   ├── main.py               # FastAPI routes, tracking logs
-│   │   ├── bedrock_proxy.py      # Raw byte proxy with SigV4
-│   │   └── run.sh                # Lambda Web Adapter startup
-│   ├── authorizer/               # Custom Authorizer Lambda
-│   │   └── handler.py            # Cognito JWT validation
-│   └── client/                   # Demo client (runs locally)
-│       └── demo.py               # LangChain + boto3 events demo
+│   ├── proxy/                       # Proxy Lambda (FastAPI + LWA)
+│   │   ├── main.py                  # FastAPI routes, tracking logs
+│   │   ├── bedrock_proxy.py         # Raw byte proxy with SigV4
+│   │   └── run.sh                   # Lambda Web Adapter startup
+│   ├── authorizer/                  # Custom Authorizer Lambda
+│   │   └── handler.py               # Cognito JWT validation
+│   └── client/                      # Demo clients (run locally)
+│       ├── demo_boto3.py            # boto3 — all 4 Bedrock APIs
+│       ├── demo_langchain.py        # LangChain streaming
+│       ├── demo_langgraph.py        # LangGraph ReAct agent
+│       ├── demo_strands.py          # Strands Agents
+│       └── demo_crewai.py           # CrewAI crew
 ├── scripts/
-│   └── setup-env.sh              # Fetch stack outputs → env vars
+│   └── setup-env.sh                 # Fetch stack outputs → env vars
 └── docs/
-    └── generated-diagrams/       # Architecture diagram
+    └── generated-diagrams/          # Architecture diagram
 ```
 
 ## Key Client Code
@@ -122,7 +122,7 @@ def add_headers(params, **kwargs):
 
 client.meta.events.register("before-call.bedrock-runtime.*", add_headers)
 
-# LangChain works transparently — zero code changes needed
+# Any framework works transparently
 chat = ChatBedrockConverse(model="global.anthropic.claude-sonnet-4-6", client=client)
 for chunk in chat.stream("Hello!"):
     print(chunk.content)
