@@ -4,6 +4,7 @@ import aws_cdk as cdk
 from aws_cdk import (
     BundlingOptions,
     aws_apigateway as apigw,
+    aws_bedrock as bedrock,
     aws_cognito as cognito,
     aws_iam as iam,
     aws_lambda as _lambda,
@@ -18,11 +19,14 @@ class BedrockProxyStack(cdk.Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         # --- Cognito ---
-        user_pool, app_client, domain = self._create_cognito()
+        self._user_pool, self._app_client, domain = self._create_cognito()
+
+        # --- Application Inference Profile ---
+        inference_profile = self._create_inference_profile()
 
         # --- Lambdas ---
         proxy_lambda = self._create_proxy_lambda()
-        authorizer_lambda = self._create_authorizer_lambda(user_pool)
+        authorizer_lambda = self._create_authorizer_lambda(self._user_pool)
 
         # --- API Gateway REST with response streaming ---
         api = self._create_api(proxy_lambda, authorizer_lambda)
@@ -34,7 +38,20 @@ class BedrockProxyStack(cdk.Stack):
         )
         cdk.CfnOutput(self, "ApiUrl", value=api.url)
         cdk.CfnOutput(self, "TokenUrl", value=token_url)
-        cdk.CfnOutput(self, "ClientId", value=app_client.user_pool_client_id)
+        cdk.CfnOutput(self, "ClientId", value=self._app_client.user_pool_client_id)
+        cdk.CfnOutput(
+            self,
+            "InferenceProfileArn",
+            value=inference_profile.attr_inference_profile_arn,
+        )
+
+    @property
+    def user_pool(self) -> cognito.UserPool:
+        return self._user_pool
+
+    @property
+    def app_client(self) -> cognito.UserPoolClient:
+        return self._app_client
 
     # ------------------------------------------------------------------ #
     # Cognito
@@ -88,6 +105,19 @@ class BedrockProxyStack(cdk.Stack):
         )
 
         return pool, app_client, domain
+
+    # ------------------------------------------------------------------ #
+    # Application Inference Profile
+    # ------------------------------------------------------------------ #
+    def _create_inference_profile(self) -> bedrock.CfnApplicationInferenceProfile:
+        return bedrock.CfnApplicationInferenceProfile(
+            self,
+            "InferenceProfile",
+            inference_profile_name="bedrock-proxy-sample-sonnet",
+            model_source=bedrock.CfnApplicationInferenceProfile.InferenceProfileModelSourceProperty(
+                copy_from="arn:aws:bedrock:us::inference-profile/us.anthropic.claude-sonnet-4-6",
+            ),
+        )
 
     # ------------------------------------------------------------------ #
     # Proxy Lambda
