@@ -115,7 +115,7 @@ class BedrockProxyStack(cdk.Stack):
             "InferenceProfile",
             inference_profile_name="bedrock-proxy-sample-sonnet",
             model_source=bedrock.CfnApplicationInferenceProfile.InferenceProfileModelSourceProperty(
-                copy_from="arn:aws:bedrock:us::inference-profile/us.anthropic.claude-sonnet-4-6",
+                copy_from=f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/us.anthropic.claude-sonnet-4-6",
             ),
         )
 
@@ -174,10 +174,9 @@ class BedrockProxyStack(cdk.Stack):
                     "bedrock:ConverseStream",
                 ],
                 resources=[
-                    # Foundation models — any region
                     "arn:aws:bedrock:*::foundation-model/*",
-                    # Inference profiles (cross-region) — any region, this account
                     f"arn:aws:bedrock:*:{self.account}:inference-profile/*",
+                    f"arn:aws:bedrock:*:{self.account}:application-inference-profile/*",
                 ],
             )
         )

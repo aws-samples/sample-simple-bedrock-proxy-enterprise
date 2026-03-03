@@ -36,10 +36,12 @@ for o in outputs:
 export API_GATEWAY_URL=$(get_output "ApiUrl")
 export TOKEN_URL=$(get_output "TokenUrl")
 export CLIENT_ID=$(get_output "ClientId")
+export INFERENCE_PROFILE_ARN=$(get_output "InferenceProfileArn")
 
 echo "  API_GATEWAY_URL=$API_GATEWAY_URL"
 echo "  TOKEN_URL=$TOKEN_URL"
 echo "  CLIENT_ID=$CLIENT_ID"
+echo "  INFERENCE_PROFILE_ARN=$INFERENCE_PROFILE_ARN"
 
 # Client secret is not in stack outputs — retrieve from Cognito
 echo "Fetching Cognito client secret..."
@@ -59,5 +61,5 @@ export CLIENT_SECRET=$(aws cognito-idp describe-user-pool-client \
 
 echo "  CLIENT_SECRET=****${CLIENT_SECRET: -4}"
 echo ""
-echo "Environment ready. Run the demo:"
-echo "  cd src/client && python demo.py"
+echo "Environment ready. Run a demo:"
+echo "  cd src/client && python demo_boto3.py"

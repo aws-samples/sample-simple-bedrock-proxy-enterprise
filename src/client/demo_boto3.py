@@ -26,7 +26,7 @@ TOKEN_URL = os.environ["TOKEN_URL"]
 CLIENT_ID = os.environ["CLIENT_ID"]
 CLIENT_SECRET = os.environ["CLIENT_SECRET"]
 
-MODEL_ID = "global.anthropic.claude-sonnet-4-6"
+MODEL_ID = os.environ.get("INFERENCE_PROFILE_ARN", "global.anthropic.claude-sonnet-4-6")
 WORKLOAD_ID = "demo-boto3-workload"
 PROMPT = "What is the capital of France? Answer in one sentence."
 

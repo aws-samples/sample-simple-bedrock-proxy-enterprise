@@ -31,6 +31,17 @@ The proxy works transparently with any framework that uses boto3 to call Bedrock
 6. **Proxy Lambda** (FastAPI + Lambda Web Adapter) extracts tracking headers + model ID, logs them, then forwards raw bytes to Bedrock using SigV4-signed requests
 7. **Response streaming** — Bedrock's binary event stream flows back through API Gateway (REST, `responseTransferMode: STREAM`) to the client's boto3, which parses it natively
 
+### Application Inference Profile
+
+The stack creates an [Application Inference Profile](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-create.html) that copies from the `us.anthropic.claude-sonnet-4-6` system profile. This demonstrates that the proxy works with inference profile ARNs — not just foundation model IDs.
+
+After `source scripts/setup-env.sh`, the `INFERENCE_PROFILE_ARN` env var is exported. The `demo_boto3.py` demo uses it automatically. To switch back to the default cross-region profile:
+
+```bash
+unset INFERENCE_PROFILE_ARN
+python demo_boto3.py
+```
+
 ### What Gets Tracked
 
 The proxy Lambda logs a structured JSON entry for every request:

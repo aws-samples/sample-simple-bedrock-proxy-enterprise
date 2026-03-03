@@ -15,8 +15,8 @@ app = FastAPI()
 
 BEDROCK_REGION = os.environ.get("BEDROCK_REGION", "us-east-1")
 
-# Matches model/{modelId}/{operation}
-PATH_PATTERN = re.compile(r"^model/(?P<model_id>[^/]+)/(?P<operation>.+)$")
+# Matches model/{modelId}/{operation} — model_id may contain slashes (e.g. ARNs)
+PATH_PATTERN = re.compile(r"^model/(?P<model_id>.+)/(?P<operation>[^/]+)$")
 
 
 @app.get("/")
@@ -58,9 +58,13 @@ async def catch_all(request: Request, path: str):
     try:
         body = await request.body()
 
+        # Use the raw ASGI path to preserve percent-encoding (e.g. %3A in ARNs).
+        # FastAPI decodes the path param, but Bedrock expects encoded colons.
+        raw_path = request.scope.get("raw_path", f"/{path}".encode()).decode("ascii")
+
         proxy_resp = await proxy_to_bedrock(
             method=request.method,
-            path=f"/{path}",
+            path=raw_path,
             body=body,
             region=BEDROCK_REGION,
         )
