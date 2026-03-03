@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+.env
+
+# CDK
+cdk.out/
+node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Lambda packaging
+.aws-sam/
+.threatmodel/
+docs/pcsr-artifacts/
+ProbeScanExport-*
+dsr-2025-11-19.xlsx
+~$dsr-2025-11-19.xlsx
+spike/

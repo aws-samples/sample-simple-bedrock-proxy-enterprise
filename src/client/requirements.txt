@@ -1,0 +1,13 @@
+# Core (all demos)
+boto3>=1.35.0
+requests>=2.32.0
+
+# demo.py + demo_langgraph.py
+langchain-aws>=0.2.0
+langgraph>=0.2.0
+
+# demo_strands.py
+strands-agents>=0.1.0
+
+# demo_crewai.py
+crewai>=0.100.0
