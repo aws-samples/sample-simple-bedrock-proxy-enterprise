@@ -1,4 +1,4 @@
-"""Custom Lambda Authorizer — validates Cognito JWT from x-auth-token header."""
+"""Custom Lambda Authorizer — validates Cognito JWT from Authorization header."""
 
 import json
 import logging
@@ -50,7 +50,8 @@ def _get_signing_key(token: str) -> jwt.algorithms.RSAAlgorithm:
 
 def handler(event, context):
     """API Gateway TOKEN authorizer handler."""
-    token = event.get("authorizationToken", "")
+    raw_token = event.get("authorizationToken", "")
+    token = raw_token.removeprefix("Bearer ").strip()
     method_arn = event["methodArn"]
 
     try:

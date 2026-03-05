@@ -5,7 +5,7 @@ Simple Amazon Bedrock Proxy — LangChain Demo
 Demonstrates that LangChain works seamlessly through a Bedrock proxy by:
 1. Authenticating with Cognito (client_credentials grant)
 2. Configuring a boto3 client with endpoint_url → API Gateway
-3. Injecting custom tracking headers via boto3 events (before-call)
+3. Injecting Authorization header and tracking headers via boto3 events (before-call)
 4. Passing the configured client to LangChain's ChatBedrockConverse
 
 Usage:
@@ -55,7 +55,7 @@ def create_bedrock_client(token: str) -> boto3.client:
     )
 
     def add_tracking_headers(params, **kwargs):
-        params["headers"]["x-auth-token"] = token
+        params["headers"]["Authorization"] = f"Bearer {token}"
         params["headers"]["X-Client-Workload-Id"] = WORKLOAD_ID
         params["headers"]["X-Request-Tracker"] = str(uuid.uuid4())
 

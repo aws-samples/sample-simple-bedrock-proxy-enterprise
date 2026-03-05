@@ -65,7 +65,7 @@ def setup_proxy(token: str):
         if service_name == "bedrock-runtime":
 
             def add_headers(params, **_kwargs):
-                params["headers"]["x-auth-token"] = token
+                params["headers"]["Authorization"] = f"Bearer {token}"
                 params["headers"]["X-Client-Workload-Id"] = WORKLOAD_ID
                 params["headers"]["X-Request-Tracker"] = str(uuid.uuid4())
 

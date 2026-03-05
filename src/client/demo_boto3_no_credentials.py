@@ -6,9 +6,8 @@ Proves that **no real AWS credentials** are needed on the client side.
 The proxy Lambda owns the IAM role that calls Bedrock; the client only
 needs a Cognito token and the API Gateway URL.
 
-boto3 still requires *some* credentials to initialise the client, so we
-pass dummy values ("unused") that are never sent to AWS — the proxy
-strips the SigV4 signature and re-signs with its own credentials.
+We use botocore.UNSIGNED to skip SigV4 signing entirely — no credentials
+are needed at all. The proxy re-signs every request with its own IAM role.
 
 Usage:
     source scripts/setup-env.sh
@@ -22,6 +21,8 @@ import uuid
 
 import boto3
 import requests
+from botocore import UNSIGNED
+from botocore.config import Config
 
 # -- Configuration (from CDK stack outputs) --
 API_GATEWAY_URL = os.environ["API_GATEWAY_URL"]
@@ -50,12 +51,11 @@ def create_bedrock_client(token: str):
         "bedrock-runtime",
         endpoint_url=API_GATEWAY_URL,
         region_name="us-west-2",
-        aws_access_key_id="unused",
-        aws_secret_access_key="unused",
+        config=Config(signature_version=UNSIGNED),
     )
 
     def add_headers(params, **kwargs):
-        params["headers"]["x-auth-token"] = token
+        params["headers"]["Authorization"] = f"Bearer {token}"
         params["headers"]["X-Client-Workload-Id"] = WORKLOAD_ID
         params["headers"]["X-Request-Tracker"] = str(uuid.uuid4())
 
@@ -105,7 +105,7 @@ def main():
     print(f"Creating boto3 client → {API_GATEWAY_URL}")
     print(f"Model: {MODEL_ID}")
     print(f"Workload: {WORKLOAD_ID}")
-    print("AWS credentials: dummy (not needed — proxy owns the real ones)\n")
+    print("AWS credentials: UNSIGNED (no signing, no credentials needed)\n")
     client = create_bedrock_client(token)
 
     test_converse(client)

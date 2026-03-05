@@ -55,7 +55,7 @@ def main():
     session = boto3.Session(region_name="us-west-2")
 
     def add_headers(params, **kwargs):
-        params["headers"]["x-auth-token"] = token
+        params["headers"]["Authorization"] = f"Bearer {token}"
         params["headers"]["X-Client-Workload-Id"] = WORKLOAD_ID
         params["headers"]["X-Request-Tracker"] = str(uuid.uuid4())
 

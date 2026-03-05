@@ -23,7 +23,7 @@ The proxy works transparently with any framework that uses boto3 to call Bedrock
 1. **Client authenticates** with Cognito (client_credentials grant) and gets an access token
 2. **Client configures boto3** to route through the proxy (via `endpoint_url` or env var)
 3. **Client injects custom headers** via boto3's `before-call` event:
-   - `x-auth-token` — Cognito JWT for authorization
+   - `Authorization` — `Bearer <Cognito JWT>` for authorization
    - `X-Client-Workload-Id` — identifies the calling application
    - `X-Request-Tracker` — unique request correlation ID
 4. **AI framework calls Bedrock as usual** — the proxy is invisible to the framework
@@ -127,7 +127,7 @@ client = boto3.client("bedrock-runtime", endpoint_url=API_GATEWAY_URL)
 
 # Inject custom headers via boto3 event system
 def add_headers(params, **kwargs):
-    params["headers"]["x-auth-token"] = cognito_token
+    params["headers"]["Authorization"] = f"Bearer {cognito_token}"
     params["headers"]["X-Client-Workload-Id"] = "my-app"
     params["headers"]["X-Request-Tracker"] = str(uuid.uuid4())
 

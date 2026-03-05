@@ -308,14 +308,14 @@ class BedrockProxyStack(cdk.Stack):
                 "securitySchemes": {
                     "tokenAuth": {
                         "type": "apiKey",
-                        "name": "x-auth-token",
+                        "name": "Authorization",
                         "in": "header",
                         "x-amazon-apigateway-authtype": "custom",
                         "x-amazon-apigateway-authorizer": {
                             "type": "token",
                             "authorizerUri": authorizer_uri,
                             "authorizerResultTtlInSeconds": 300,
-                            "identitySource": "method.request.header.x-auth-token",
+                            "identitySource": "method.request.header.Authorization",
                         },
                     }
                 }

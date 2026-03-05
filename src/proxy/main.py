@@ -40,7 +40,7 @@ async def catch_all(request: Request, path: str):
     operation = match.group("operation")
 
     # Extract custom tracking headers set by the client
-    auth_token = request.headers.get("x-auth-token", "")
+    auth_token = request.headers.get("authorization", "").removeprefix("Bearer ").strip()
     workload_id = request.headers.get("x-client-workload-id", "")
     request_tracker = request.headers.get("x-request-tracker", "")
 
