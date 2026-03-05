@@ -15,6 +15,8 @@ import uuid
 
 import boto3
 import requests
+from botocore import UNSIGNED
+from botocore.config import Config
 from langchain.agents import create_agent
 from langchain_aws import ChatBedrockConverse
 from langchain_core.tools import tool
@@ -44,6 +46,7 @@ def create_bedrock_client(token: str):
         "bedrock-runtime",
         endpoint_url=API_GATEWAY_URL,
         region_name="us-west-2",
+        config=Config(signature_version=UNSIGNED),
     )
 
     def add_headers(params, **kwargs):

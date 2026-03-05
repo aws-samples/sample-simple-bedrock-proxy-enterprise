@@ -19,6 +19,8 @@ import uuid
 
 import boto3
 import requests
+from botocore import UNSIGNED
+from botocore.config import Config
 from strands import Agent
 from strands.models.bedrock import BedrockModel
 
@@ -61,10 +63,11 @@ def main():
 
     session.events.register("before-call.bedrock-runtime.*", add_headers)
 
-    # Create Strands model with the custom session
+    # Create Strands model with the custom session (UNSIGNED to skip SigV4)
     model = BedrockModel(
         model_id=MODEL_ID,
         boto_session=session,
+        boto_client_config=Config(signature_version=UNSIGNED),
     )
 
     # Create and run the agent

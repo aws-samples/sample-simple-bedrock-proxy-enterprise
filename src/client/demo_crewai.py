@@ -22,6 +22,8 @@ os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"
 
 import boto3
 import requests
+from botocore import UNSIGNED
+from botocore.config import Config
 from crewai import LLM, Agent, Crew, Task
 
 API_GATEWAY_URL = os.environ["API_GATEWAY_URL"]
@@ -57,8 +59,15 @@ def setup_proxy(token: str):
     _original_client = boto3.Session.client
 
     def _patched_client(self, service_name, *args, **kwargs):
-        if service_name == "bedrock-runtime" and "endpoint_url" not in kwargs:
-            kwargs["endpoint_url"] = API_GATEWAY_URL
+        if service_name == "bedrock-runtime":
+            if "endpoint_url" not in kwargs:
+                kwargs["endpoint_url"] = API_GATEWAY_URL
+            # Merge UNSIGNED config to skip SigV4 (proxy owns the real creds)
+            unsigned_config = Config(signature_version=UNSIGNED)
+            if "config" in kwargs and kwargs["config"]:
+                kwargs["config"] = kwargs["config"].merge(unsigned_config)
+            else:
+                kwargs["config"] = unsigned_config
 
         client = _original_client(self, service_name, *args, **kwargs)
 

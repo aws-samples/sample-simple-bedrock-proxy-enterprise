@@ -22,6 +22,8 @@ import uuid
 
 import boto3
 import requests
+from botocore import UNSIGNED
+from botocore.config import Config
 from langchain_aws import ChatBedrockConverse
 
 # -- Configuration (from CDK stack outputs) --
@@ -52,6 +54,7 @@ def create_bedrock_client(token: str) -> boto3.client:
         "bedrock-runtime",
         endpoint_url=API_GATEWAY_URL,
         region_name="us-east-1",
+        config=Config(signature_version=UNSIGNED),
     )
 
     def add_tracking_headers(params, **kwargs):

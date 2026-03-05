@@ -19,6 +19,8 @@ import uuid
 
 import boto3
 import requests
+from botocore import UNSIGNED
+from botocore.config import Config
 
 # -- Configuration (from CDK stack outputs) --
 API_GATEWAY_URL = os.environ["API_GATEWAY_URL"]
@@ -47,6 +49,7 @@ def create_bedrock_client(token: str):
         "bedrock-runtime",
         endpoint_url=API_GATEWAY_URL,
         region_name="us-west-2",
+        config=Config(signature_version=UNSIGNED),
     )
 
     def add_headers(params, **kwargs):
